@@ -1,49 +1,67 @@
 <?php
+
 /**
  * Wp_Licence_Manager_Client adds licence handling properties to your WordPress plugin.
- *
  *
  * @author Jarkko Laine
  * @url http://fourbean.com/licence-manager
  */
-
 class Wp_Licence_Manager_Client {
 
     /**
-     * The API endpoint. When using the class in your own WordPress plugin, replace this with
-     * your installation URL of the WordPress Licence Manager plugin.
+     * The API endpoint. Configured through the class's constructor.
      *
      * @var String  The API endpoint.
      */
-    //private $api_endpoint = 'http://fourbean.com/fourbase/demo/api/licence-manager';
-    private $api_endpoint = 'http://localhost:8888/wordpress-licencer/api/licence-manager';
+    private $api_endpoint;
 
     /**
+     * The product id (slug) used for this product on the Licence Manager site.
+     * Configured through the class's constructor.
+     *
      * @var int     The product id of the related product in the licence manager.
      */
     private $product_id;
 
+    /**
+     * The name of the product using this class. Configured in the class's constructor.
+     *
+     * @var int     The name of the product (plugin / theme) using this class.
+     */
     private $product_name;
 
     /**
-     * @var String  The version number of the installed plugin / theme. Populated in constructor.
+     * Current version of the product (plugin / theme) using this class.
+     * Populated in the class's constructor.
+     *
+     * @var String  The version number of the installed plugin / theme.
      */
     private $local_version;
 
     /**
-     * @var String  The name / ID of the installed plugin / theme. Populated in constructor.
+     * The slug of the plugin or theme using this class.
+     * Populated in the class's constructor.
+     *
+     * @var String  The name / ID of the plugin / theme.
      */
     private $theme_slug;
 
+    /**
+     * The text domain of the plugin or theme using this class.
+     * Populated in the class's constructor.
+     *
+     * @var String  The text domain of the plugin / theme.
+     */
     private $theme_text_domain;
 
     /**
      *
      *
      */
-    public function __construct( $product_id, $product_name ) {
+    public function __construct( $product_id, $product_name, $api_url ) {
         $this->product_id = $product_id;
         $this->product_name = $product_name;
+        $this->api_endpoint = $api_url;
 
         // TODO: All of the functionality should be limited to the admin area.
         $this->init_wordpress_hooks();
