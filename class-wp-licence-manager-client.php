@@ -491,8 +491,8 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         /**
          * Checks the API response to see if there was an error.
          *
-         * @param $response
-         * @return bool
+         * @param $response mixed|object    The API response to verify
+         * @return bool     True if there was an error. Otherwise false.
          */
         private function is_api_error( $response ) {
             if ( $response === false ) {
