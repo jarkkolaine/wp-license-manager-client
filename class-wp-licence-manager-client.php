@@ -373,7 +373,7 @@ class Wp_License_Manager_Client {
                 $url .= '?';
                 $first = false;
             }
-            $url .= $key . '=' . $value . '&';
+            $url .= $key . '=' . urlencode( $value ) . '&';
         }
 
         // Send the request
