@@ -196,20 +196,20 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
             $settings_group_id = $this->product_id . '-license-settings-group';
 
             ?>
-            <div class="wrap">
-                <form action='options.php' method='post'>
+                <div class="wrap">
+                    <form action='options.php' method='post'>
 
-                    <h2><?php echo $title; ?></h2>
+                        <h2><?php echo $title; ?></h2>
 
-                    <?php
-                    settings_fields( $settings_group_id );
-                    do_settings_sections( $settings_group_id );
-                    submit_button();
-                    ?>
+                        <?php
+                            settings_fields( $settings_group_id );
+                            do_settings_sections( $settings_group_id );
+                            submit_button();
+                        ?>
 
-                </form>
-            </div>
-        <?php
+                    </form>
+                </div>
+            <?php
         }
 
         /**
@@ -219,9 +219,9 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
             $settings_field_name = $this->get_settings_field_name();
             $options = get_option( $settings_field_name );
             ?>
-            <input type='text' name='<?php echo $settings_field_name; ?>[email]'
+                <input type='text' name='<?php echo $settings_field_name; ?>[email]'
                    value='<?php echo $options['email']; ?>' class='regular-text'>
-        <?php
+            <?php
         }
 
         /**
@@ -231,39 +231,35 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
             $settings_field_name = $this->get_settings_field_name();
             $options = get_option( $settings_field_name );
             ?>
-            <input type='text' name='<?php echo $settings_field_name; ?>[license_key]'
+                <input type='text' name='<?php echo $settings_field_name; ?>[license_key]'
                    value='<?php echo $options['license_key']; ?>' class='regular-text'>
-        <?php
+            <?php
         }
 
         /**
-         * If the plugin has not been configured properly, display an admin notice.
+         * If the license has not been configured properly, display an admin notice.
          */
         public function show_admin_notices() {
             $options = get_option( $this->get_settings_field_name() );
 
             if ( !$options || ! isset( $options['email'] ) || ! isset( $options['license_key'] ) ||
                 $options['email'] == '' || $options['license_key'] == '' ) {
+
+                $msg = __( 'Please enter your email and license key to enable updates to %s.', $this->text_domain );
+                $msg = sprintf( $msg, $this->product_name );
                 ?>
+                    <div class="update-nag">
+                        <p>
+                            <?php echo $msg; ?>
+                        </p>
 
-                <div class="update-nag">
-                    <p>
-                        <?php
-                        $msg = __( 'Please enter your email and license key to enable updates to %s.', $this->text_domain );
-                        $msg = sprintf( $msg, $this->product_name );
-
-                        echo $msg;
-                        ?>
-                    </p>
-
-                    <p>
-                        <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
-                            <?php _e( 'Complete the setup now.', $this->text_domain ); ?>
-                        </a>
-                    </p>
-                </div>
-
-            <?php
+                        <p>
+                            <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
+                                <?php _e( 'Complete the setup now.', $this->text_domain ); ?>
+                            </a>
+                        </p>
+                    </div>
+                <?php
             }
         }
 
@@ -304,7 +300,6 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                     $transient->response[$plugin_slug] = (object) array(
                         'new_version' => $info->version,
                         'package' => $info->package_url,
-//                        'url' => $info->description_url,
                         'slug' => $plugin_slug
                     );
                 }
@@ -316,10 +311,10 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         /**
          * Checks the license manager to see if there is an update available for this theme.
          *
-         * @return bool True if the remote version of the product is newer than this one. Otherwise false.
+         * @return bool True if the remote version of the product is newer
+         *              than this one. Otherwise false.
          */
-        public function is_update_available()
-        {
+        public function is_update_available() {
             $license_info = $this->get_license_info();
             if ( $this->is_api_error( $license_info ) ) {
                 return false;
