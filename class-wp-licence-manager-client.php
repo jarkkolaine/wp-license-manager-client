@@ -1,6 +1,20 @@
 <?php
 /**
- * Wp_License_Manager_Client adds license handling properties to your WordPress theme or plugin.
+ * Wp_License_Manager_Client adds license checked updates to your
+ * WordPress theme or plugin, using the WordPress Licence Manager plugin
+ * and its API.
+ *
+ * To use the class, just create an instance of it:
+ *
+ * $license_manager = new Wp_License_Manager_Client(
+ *      $product_id,    // The "slug" type id for your plugin/theme in your license manager.
+ *      $product_name,  // A pretty name for your plugin/theme. Used for settings screens.
+ *      $api_url,       // The URL of your WordPress Licence Manager installation.
+ *      $type = 'theme' // "theme" or "plugin" depending on which you are creating.
+ * );
+ *
+ * For more information, check out README.md or the plugin's web site
+ * at http://fourbean.com/license-manager
  *
  * @author Jarkko Laine
  * @url http://fourbean.com/license-manager
@@ -30,20 +44,11 @@ class Wp_License_Manager_Client {
     private $product_name;
 
     /**
-     * Current version of the product (plugin / theme) using this class.
-     * Populated in the class's constructor.
+     * The type of the installation in which this class is being used.
      *
-     * @var String  The version number of the installed plugin / theme.
+     * @var string  'theme' or 'plugin'.
      */
-    private $local_version;
-
-    /**
-     * The slug of the plugin or theme using this class.
-     * Populated in the class's constructor.
-     *
-     * @var String  The name / ID of the plugin / theme.
-     */
-    private $theme_slug;
+    private $type;
 
     /**
      * The text domain of the plugin or theme using this class.
@@ -53,60 +58,58 @@ class Wp_License_Manager_Client {
      */
     private $theme_text_domain;
 
+
+
     /**
      * Initializes the license manager client.
      *
      * @param $product_id   string  The text id (slug) of the product on the license manager site
      * @param $product_name string  The name of the product, used for menus
+     * @param $text_domain  string  Theme / plugin text domain, used for localizing the settings screens.
      * @param $api_url      string  The URL to the license manager API (your license server)
      * @param $type         string  The type of project this class is being used in ('theme' or 'plugin')
      */
-    public function __construct( $product_id, $product_name, $api_url, $type = 'theme' ) {
+    public function __construct( $product_id, $product_name, $text_domain, $api_url, $type = 'theme' ) {
+        // Store setup data
         $this->product_id = $product_id;
         $this->product_name = $product_name;
+        $this->theme_text_domain = $text_domain;
         $this->api_endpoint = $api_url;
+        $this->type = $type;
 
-        // TODO: All of the functionality should be limited to the admin area.
-        $this->init_wordpress_hooks();
+        // Add actions required for the class's functionality.
+        // NOTE: No actual functionality here!
+        if ( is_admin() ) {
+            // Add the menu screen for inserting license information
+            add_action( 'admin_menu', array( $this, 'add_license_settings_page' ) );
+            add_action( 'admin_init', array( $this, 'add_license_settings_fields' ) );
 
-        // Save the theme information for comparing with the server
-        if ( $type == 'theme' ) {
-            add_action( 'after_setup_theme', array( $this, 'populate_theme_information' ) );
-        } elseif ( $type == 'plugin' ) {
-            // TODO
+            // Add a nag text for reminding the user to save the license information
+            add_action( 'admin_notices', array( $this, 'show_admin_notices' ) );
+
+            if ( $type == 'theme' ) {
+                // Check for updates (for themes)
+                add_filter( 'pre_set_site_transient_update_themes', array( $this, 'check_for_update' ) );
+            } elseif ( $type == 'plugin' ) {
+                // TODO
+            }
         }
     }
 
-    /**
-     * Hooks the class to required WordPress actions and filters.
-     *
-     * Important: this function is not supposed to do anything else than just that. All other functionality
-     * must be activated through actions and filters.
-     */
-    public function init_wordpress_hooks() {
-        // Check for updates
-        add_filter( 'pre_set_site_transient_update_themes', array( $this, 'check_for_update' ) );
 
-        // Add the menu screen for inserting license information
-        add_action( 'admin_menu', array( $this, 'add_license_settings_page' ) );
-        add_action( 'admin_init', array( $this, 'add_license_settings_fields' ) );
-    }
-
-    /**
-     * Collects information about the current theme. Used for updating themes.
-     */
-    public function populate_theme_information() {
-        $theme_data = wp_get_theme();
-        $this->local_version = $theme_data->Version;
-        $this->theme_slug = $theme_data->get_template();
-        $this->theme_text_domain = $theme_data->TextDomain;
-    }
+    //
+    // LICENSE SETTINGS
+    //
 
     /**
      * Creates the settings items for entering license information (email + license key).
      *
-     * NOTE: Depending on the theme or plugin, you may want to override this method in a sub class
-     * to place the settings item in a different location.
+     * NOTE:
+     *
+     * If you want to move the license settings somewhere else (e.g. your theme / plugin
+     * settings page), we suggest you override this function in a subclass and
+     * initialize the settings fields yourself. Just make sure to use the same
+     * settings fields so that Wp_License_Manager_Client can still find the settings values.
      */
     public function add_license_settings_page() {
         $title = sprintf( __( '%s License', $this->theme_text_domain ), $this->product_name );
@@ -115,9 +118,8 @@ class Wp_License_Manager_Client {
             $title,
             $title,
             'read',
-            $this->product_id . '-licenses',
-            array( $this, 'render_licenses_menu' ),
-            'dashicons-lock'
+            $this->get_settings_page_slug(),
+            array( $this, 'render_licenses_menu' )
         );
     }
 
@@ -128,7 +130,7 @@ class Wp_License_Manager_Client {
         $settings_group_id = $this->product_id . '-license-settings-group';
         $settings_section_id = $this->product_id . '-license-settings-section';
 
-        register_setting( $settings_group_id, $this->product_id . '-license-settings' );
+        register_setting( $settings_group_id, $this->get_settings_field_name() );
 
         add_settings_section(
             $settings_section_id,
@@ -159,42 +161,41 @@ class Wp_License_Manager_Client {
      * Renders the description for the settings section.
      */
     public function render_settings_section() {
-        echo "Settings section";
+        _e( 'Insert your license information to enable updates.', $this->theme_text_domain );
     }
 
     /**
      * Renders the settings page for entering license information.
      */
     public function render_licenses_menu() {
-        // TODO: validate license when saved!
-
         $title = sprintf( __( '%s License', $this->theme_text_domain ), $this->product_name );
-
         $settings_group_id = $this->product_id . '-license-settings-group';
 
         ?>
-        <form action='options.php' method='post'>
+        <div class="wrap">
+            <form action='options.php' method='post'>
 
-            <h2><?php echo $title; ?></h2>
+                <h2><?php echo $title; ?></h2>
 
-            <?php
-            settings_fields( $settings_group_id );
-            do_settings_sections( $settings_group_id );
-            submit_button();
-            ?>
+                <?php
+                    settings_fields( $settings_group_id );
+                    do_settings_sections( $settings_group_id );
+                    submit_button();
+                ?>
 
-        </form>
-    <?php
+            </form>
+        </div>
+        <?php
     }
 
     /**
      * Renders the email settings field on the license settings page.
      */
     public function render_email_settings_field() {
-        $settings_field_name = $this->product_id . '-license-settings';
+        $settings_field_name = $this->get_settings_field_name();
         $options = get_option( $settings_field_name );
         ?>
-            <input type='text' name='<?php echo $settings_field_name; ?>[email]' value='<?php echo $options['email']; ?>'>
+            <input type='text' name='<?php echo $settings_field_name; ?>[email]' value='<?php echo $options['email']; ?>' class='regular-text'>
         <?php
     }
 
@@ -202,19 +203,55 @@ class Wp_License_Manager_Client {
      * Renders the license key settings field on the license settings page.
      */
     public function render_license_key_settings_field() {
-        $settings_field_name = $this->product_id . '-license-settings';
+        $settings_field_name = $this->get_settings_field_name();
         $options = get_option( $settings_field_name );
         ?>
-            <input type='text' name='<?php echo $settings_field_name; ?>[license_key]' value='<?php echo $options['license_key']; ?>'>
+            <input type='text' name='<?php echo $settings_field_name; ?>[license_key]' value='<?php echo $options['license_key']; ?>' class='regular-text'>
         <?php
     }
 
     /**
-     * A filter that checks if there are updates to the theme or plugin
+     * If the plugin has not been configured properly, display an admin notice.
+     */
+    public function show_admin_notices() {
+        $options = get_option( $this->get_settings_field_name() );
+
+        if ( ! $options || ! isset( $options['email'] ) || ! isset( $options['license_key'] ) ||
+            $options['email'] == '' || $options['license_key'] == '' ) {
+
+            ?>
+
+            <div class="update-nag">
+                <p>
+                    <?php
+                        $msg = __( 'Please enter your email and license key to enable updates to %s.', $this->theme_text_domain );
+                        $msg = sprintf( $msg, $this->product_name );
+
+                        echo $msg;
+                    ?>
+                </p>
+                <p>
+                    <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
+                        Complete the setup now.
+                    </a>
+                </p>
+            </div>
+
+            <?php
+        }
+    }
+
+
+    //
+    // CHECKING FOR UPDATES
+    //
+
+    /**
+     * The filter that checks if there are updates to the theme or plugin
      * using the License Manager API.
      *
-     * @param $transient
-     * @return mixed
+     * @param $transient    mixed   The transient used for WordPress theme updates.
+     * @return mixed The transient with our (possible) additions.
      */
     public function check_for_update( $transient ) {
         if ( empty( $transient->checked ) ) {
@@ -223,40 +260,45 @@ class Wp_License_Manager_Client {
 
         if ( $this->is_update_available() ) {
             $info = $this->get_license_info();
-            $transient->response[$this->theme_slug] = array(
+
+            $theme_data = wp_get_theme();
+            $theme_slug = $theme_data->get_template();
+
+            $transient->response[$theme_slug] = array(
                 'new_version' => $info->version,
                 'package' => $info->package_url,
                 'url' => $info->description_url
             );
-
-            // TODO: different message for when license key hasn't been inserted
         }
 
         return $transient;
     }
 
     /**
-     * Checks whether there is an update available for this theme or not.
+     * Checks the license manager to see if there is an update available for this theme.
      *
-     * @return bool True if the remote version of the product is newer than this one
+     * @return bool True if the remote version of the product is newer than this one. Otherwise false.
      */
     public function is_update_available() {
         $license_info = $this->get_license_info();
-
         if ( $this->is_api_error( $license_info ) ) {
-            // TODO: show "invalid license info error"
             return false;
         }
 
-        $server_version = $license_info->version;
-
-        return ($server_version > $this->local_version);
+        return ( $license_info->version > $this->get_local_version() );
     }
 
+    /**
+     * Calls the License Manager API to get the license information for the
+     * current product.
+     *
+     * @return object|bool   The product data, or false if API call fails.
+     */
     public function get_license_info() {
-        $options = get_option( $this->product_id . "-license-settings" );
+        $options = get_option( $this->get_settings_field_name() );
         if ( !isset( $options['email' ] ) || !isset( $options['license_key'] ) ) {
-            return array(); // TODO: proper error message
+            // User hasn't saved the license to settings yet. No use making the call.
+            return false;
         }
 
         return $this->call_api(
@@ -269,6 +311,51 @@ class Wp_License_Manager_Client {
         );
     }
 
+
+    //
+    // HELPER FUNCTIONS TO ACCESS PROPERTIES
+    //
+
+    /**
+     * @return string   The name of the settings field storing all license manager settings.
+     */
+    protected function get_settings_field_name() {
+        return $this->product_id . '-license-settings';
+    }
+
+    /**
+     * @return string   The slug id of the licenses settings page.
+     */
+    protected function get_settings_page_slug() {
+        return $this->product_id . '-licenses';
+    }
+
+    /**
+     * A shorthand function for checking if we are in a theme or a plugin.
+     *
+     * @return bool True if this is a theme. False if a plugin.
+     */
+    private function is_theme() {
+        return $this->type == 'theme';
+    }
+
+    /**
+     * @return string   The theme / plugin version of the local installation.
+     */
+    private function get_local_version() {
+        if ( $this->is_theme() ) {
+            $theme_data = wp_get_theme();
+            return $theme_data->Version;
+        } else {
+
+        }
+    }
+
+
+    //
+    // API HELPER FUNCTIONS
+    //
+
     /**
      * Makes a call to the WordPress License Manager API.
      *
@@ -277,7 +364,6 @@ class Wp_License_Manager_Client {
      * @return          array   The API response
      */
     private function call_api( $method, $params ) {
-        // TODO: should we check for double slashes?
         $url = $this->api_endpoint . '/' . $method;
 
         // Append parameters for GET request
@@ -290,25 +376,34 @@ class Wp_License_Manager_Client {
             $url .= $key . '=' . $value . '&';
         }
 
+        // Send the request
         $response = wp_remote_get( $url );
         if ( is_wp_error( $response ) ) {
-            echo 'Error making request: ' . $response->get_error_message() . ' )';
-            return -1; // TODO proper error response
+            return false;
         }
 
         $response_body = wp_remote_retrieve_body( $response );
-        $response_code = wp_remote_retrieve_response_code( $response );
-
         $result = json_decode( $response_body );
+
         return $result;
     }
 
+    /**
+     * Checks the API response to see if there was an error.
+     *
+     * @param $response
+     * @return bool
+     */
     private function is_api_error( $response ) {
-        if ( !is_array( $response ) ) {
+        if ( $response === false ) {
             return true;
         }
 
-        if ( isset( $response['error'] ) ) {
+        if ( !is_object( $response ) ) {
+            return true;
+        }
+
+        if ( isset( $response->error ) ) {
             return true;
         }
 
