@@ -9,6 +9,7 @@
  * $license_manager = new Wp_License_Manager_Client(
  *      $product_id,    // The "slug" type id for your plugin/theme in your license manager.
  *      $product_name,  // A pretty name for your plugin/theme. Used for settings screens.
+ *      $test_domain,   // The plugin / theme text domain for localization.
  *      $api_url,       // The URL of your WordPress Licence Manager installation.
  *      $type = 'theme' // "theme" or "plugin" depending on which you are creating.
  * );
@@ -59,7 +60,6 @@ class Wp_License_Manager_Client {
     private $theme_text_domain;
 
 
-
     /**
      * Initializes the license manager client.
      *
@@ -105,7 +105,6 @@ class Wp_License_Manager_Client {
      * Creates the settings items for entering license information (email + license key).
      *
      * NOTE:
-     *
      * If you want to move the license settings somewhere else (e.g. your theme / plugin
      * settings page), we suggest you override this function in a subclass and
      * initialize the settings fields yourself. Just make sure to use the same
