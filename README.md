@@ -1,11 +1,11 @@
-# WordPress License Manager Client
+# WP License Manager Client
 
-Use this class together with the WordPress License Manager plugin from [Fourbean](http://fourbean.com) to
+Use this class together with the WP License Manager plugin from [Fourbean](http://fourbean.com) to
 securely serve updates to your premium (or private) WordPress plugin or theme from your own web site.
 
 ## Contents
 
-WordPress License Manager Client includes the following files:
+WP License Manager Client includes the following files:
 
 * `README.md`: The file you are reading right now
 * `LICENSE`: The GPL v3 license applied to this piece of code
@@ -13,15 +13,15 @@ WordPress License Manager Client includes the following files:
 
 ## Usage
 
-To use the WordPress License Manager Client, you will need two components:
+To use the *WP License Manager Client*, you will need two components:
 
-1. A self-hosted WordPress site with the [WordPress License Manager plugin](TODO) installed.
+1. A self-hosted WordPress site with the [WP License Manager plugin](TODO) installed.
 1. A WordPress plugin or theme that you want to make use the license control.
 
 Let's assume your WordPress site (license manager) is set up at `http://mylicenses.example.com`. In this case, 
 you'll be able to access the licence manager API at `http://mylicenses.example.com/api/license-manager`.
 
-To set up your WordPress License Manager Client using this license manager server:
+To set up your WP License Manager Client using this license manager server:
  
 ### Step 1
 
@@ -97,5 +97,5 @@ to its newest version is to subclass `Wp_License_Manager_Client` and override it
 
 ## Questions and Suggestions
 
-If you have any questions or suggestions for what you'd like to see in this class or the WordPress License Manager 
+If you have any questions or suggestions for what you'd like to see in this class or the *WP License Manager* 
 plugin, [send me email](mailto:jarkko@jarkkolaine.com).

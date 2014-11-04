@@ -4,7 +4,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
 
     /**
      * Wp_License_Manager_Client adds license checked updates to your
-     * WordPress theme or plugin, using the WordPress Licence Manager plugin
+     * WordPress theme or plugin, using the WP Licence Manager plugin
      * and its API.
      *
      * To use the class, just create an instance of it:
@@ -13,7 +13,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
      *      $product_id,        // The "slug" type id for your plugin/theme in your license manager.
      *      $product_name,      // A pretty name for your plugin/theme. Used for settings screens.
      *      $test_domain,       // The plugin / theme text domain for localization.
-     *      $api_url,           // The URL of your WordPress Licence Manager installation.
+     *      $api_url,           // The URL of your WP Licence Manager installation.
      *      $type = 'theme',    // "theme" or "plugin" depending on which you are creating.
      *      $plugin_file = ''   // The main file of your plugin (only needed for plugins).
      *                          // e.g. __FILE__ if you are creating Wp_Licence_Manager_Client from your
@@ -457,7 +457,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         //
 
         /**
-         * Makes a call to the WordPress License Manager API.
+         * Makes a call to the WP License Manager API.
          *
          * @param $method   String  The API method to invoke on the license manager site
          * @param $params   array   The parameters for the API call
