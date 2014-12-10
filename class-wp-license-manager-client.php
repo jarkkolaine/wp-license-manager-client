@@ -21,10 +21,10 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
      * );
      *
      * For more information, check out README.md or the plugin's web site
-     * at http://fourbean.com/license-manager
+     * at http://fourbean.com/wp-license-manager
      *
      * @author Jarkko Laine
-     * @url http://fourbean.com/license-manager
+     * @url http://fourbean.com/wp-license-manager
      */
     class Wp_License_Manager_Client {
 
@@ -72,15 +72,6 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         private $plugin_file;
 
         /**
-         * The plugin / theme information is cached for the duration of one HTTP request. This way
-         * we don't have to make too many API requests.
-         *
-         * @var array   The plugin / theme information, or null if it has not been requested yet.
-         */
-        private $cached_info;
-
-
-        /**
          * Initializes the license manager client.
          *
          * @param $product_id   string  The text id (slug) of the product on the license manager site
@@ -113,7 +104,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                 if ( $type == 'theme' ) {
                     // Check for updates (for themes)
                     add_filter( 'pre_set_site_transient_update_themes', array( $this, 'check_for_update' ) );
-                } elseif ($type == 'plugin') {
+                } elseif ( $type == 'plugin' ) {
                     // Check for updates (for plugins)
                     add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_update' ) );
 
@@ -185,7 +176,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
          * Renders the description for the settings section.
          */
         public function render_settings_section() {
-            _e( 'Insert your license information to enable updates.', $this->text_domain);
+            _e( 'Insert your license information to enable updates.', $this->text_domain );
         }
 
         /**
@@ -196,20 +187,20 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
             $settings_group_id = $this->product_id . '-license-settings-group';
 
             ?>
-                <div class="wrap">
-                    <form action='options.php' method='post'>
+            <div class="wrap">
+                <form action='options.php' method='post'>
 
-                        <h2><?php echo $title; ?></h2>
+                    <h2><?php echo $title; ?></h2>
 
-                        <?php
-                            settings_fields( $settings_group_id );
-                            do_settings_sections( $settings_group_id );
-                            submit_button();
-                        ?>
+                    <?php
+                    settings_fields( $settings_group_id );
+                    do_settings_sections( $settings_group_id );
+                    submit_button();
+                    ?>
 
-                    </form>
-                </div>
-            <?php
+                </form>
+            </div>
+        <?php
         }
 
         /**
@@ -219,9 +210,9 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
             $settings_field_name = $this->get_settings_field_name();
             $options = get_option( $settings_field_name );
             ?>
-                <input type='text' name='<?php echo $settings_field_name; ?>[email]'
+            <input type='text' name='<?php echo $settings_field_name; ?>[email]'
                    value='<?php echo $options['email']; ?>' class='regular-text'>
-            <?php
+        <?php
         }
 
         /**
@@ -231,9 +222,9 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
             $settings_field_name = $this->get_settings_field_name();
             $options = get_option( $settings_field_name );
             ?>
-                <input type='text' name='<?php echo $settings_field_name; ?>[license_key]'
+            <input type='text' name='<?php echo $settings_field_name; ?>[license_key]'
                    value='<?php echo $options['license_key']; ?>' class='regular-text'>
-            <?php
+        <?php
         }
 
         /**
@@ -242,24 +233,25 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         public function show_admin_notices() {
             $options = get_option( $this->get_settings_field_name() );
 
-            if ( !$options || ! isset( $options['email'] ) || ! isset( $options['license_key'] ) ||
-                $options['email'] == '' || $options['license_key'] == '' ) {
+            if ( ! $options || ! isset( $options['email'] ) || ! isset( $options['license_key'] ) ||
+                $options['email'] == '' || $options['license_key'] == ''
+            ) {
 
                 $msg = __( 'Please enter your email and license key to enable updates to %s.', $this->text_domain );
                 $msg = sprintf( $msg, $this->product_name );
                 ?>
-                    <div class="update-nag">
-                        <p>
-                            <?php echo $msg; ?>
-                        </p>
+                <div class="update-nag">
+                    <p>
+                        <?php echo $msg; ?>
+                    </p>
 
-                        <p>
-                            <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
-                                <?php _e( 'Complete the setup now.', $this->text_domain ); ?>
-                            </a>
-                        </p>
-                    </div>
-                <?php
+                    <p>
+                        <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
+                            <?php _e( 'Complete the setup now.', $this->text_domain ); ?>
+                        </a>
+                    </p>
+                </div>
+            <?php
             }
         }
 
@@ -270,9 +262,11 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
 
         /**
          * The filter that checks if there are updates to the theme or plugin
-         * using the License Manager API.
+         * using the WP License Manager API.
          *
-         * @param $transient    mixed   The transient used for WordPress theme updates.
+         * @param $transient          mixed   The transient used for WordPress
+         *                            theme / plugin updates.
+         *
          * @return mixed        The transient with our (possible) additions.
          */
         public function check_for_update( $transient ) {
@@ -280,8 +274,8 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                 return $transient;
             }
 
-            if ( $this->is_update_available() ) {
-                $info = $this->get_license_info();
+            $info = $this->is_update_available();
+            if ( $info !== false ) {
 
                 if ( $this->is_theme() ) {
                     // Theme update
@@ -290,8 +284,8 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
 
                     $transient->response[$theme_slug] = array(
                         'new_version' => $info->version,
-                        'package' => $info->package_url,
-                        'url' => $info->description_url
+                        'package'     => $info->package_url,
+                        'url'         => $info->description_url
                     );
                 } else {
                     // Plugin update
@@ -299,8 +293,8 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
 
                     $transient->response[$plugin_slug] = (object) array(
                         'new_version' => $info->version,
-                        'package' => $info->package_url,
-                        'slug' => $plugin_slug
+                        'package'     => $info->package_url,
+                        'slug'        => $plugin_slug
                     );
                 }
             }
@@ -311,8 +305,8 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         /**
          * Checks the license manager to see if there is an update available for this theme.
          *
-         * @return bool True if the remote version of the product is newer
-         *              than this one. Otherwise false.
+         * @return object|bool    If there is an update, returns the license information.
+         *                      Otherwise returns false.
          */
         public function is_update_available() {
             $license_info = $this->get_license_info();
@@ -320,63 +314,10 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                 return false;
             }
 
-            return version_compare( $license_info->version, $this->get_local_version(), '>' );
-        }
-
-        /**
-         * A function for the WordPress "plugins_api_result" filter. Checks if
-         * the user is requesting information about the current plugin and returns
-         * its details if needed.
-         *
-         * This function is called after the Plugins API has completed checking
-         * for plugin information on WordPress.org.
-         *
-         * @param $res      bool|object The result object, or false (= default value).
-         * @param $action   string      The Plugins API action. We're interested in 'plugin_information'.
-         * @param $args     array       The Plugins API parameters.
-         *
-         * @return object   The API response.
-         */
-        public function plugins_api_handler( $res, $action, $args ) {
-            if ( $action == 'plugin_information' ) {
-
-                // If the request is for this plugin, respond to it
-                if ( isset( $args->slug ) && $args->slug == plugin_basename( $this->plugin_file ) ) {
-                    $info = $this->get_license_info();
-
-                    $res = (object) array(
-                        'name' => isset( $info->name ) ? $info->name : '',
-                        'version' => $info->version,
-                        'slug' => $args->slug,
-                        'download_link' => $info->package_url,
-
-                        'tested' => isset( $info->tested ) ? $info->tested : '',
-                        'requires' => isset( $info->requires ) ? $info->requires : '',
-                        'last_updated' => isset( $info->last_updated ) ? $info->last_updated : '',
-                        'homepage' => isset( $info->description_url ) ? $info->description_url : '',
-
-                        'sections' => array(
-                            'description' => $info->description,
-                        ),
-
-                        'banners' => array(
-                            'low' => isset( $info->banner_low ) ? $info->banner_low : '',
-                            'high' => isset( $info->banner_high ) ? $info->banner_high : ''
-                        ),
-
-                        'external' => true
-                    );
-
-                    // Add change log tab if the server sent it
-                    if ( isset( $info->changelog ) ) {
-                        $res['sections']['changelog'] = $info->changelog;
-                    }
-
-                    return $res;
-                }
+            if ( version_compare( $license_info->version, $this->get_local_version(), '>' ) ) {
+                return $license_info;
             }
 
-            // Not our request, let WordPress handle this.
             return false;
         }
 
@@ -393,10 +334,6 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                 return false;
             }
 
-            if ( $this->cached_info ) {
-                return $this->cached_info;
-            }
-
             $info = $this->call_api(
                 'info',
                 array(
@@ -406,8 +343,64 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                 )
             );
 
-            $this->cached_info = $info;
             return $info;
+        }
+
+        /**
+         * A function for the WordPress "plugins_api" filter. Checks if
+         * the user is requesting information about the current plugin and returns
+         * its details if needed.
+         *
+         * This function is called before the Plugins API checks
+         * for plugin information on WordPress.org.
+         *
+         * @param $res      bool|object The result object, or false (= default value).
+         * @param $action   string      The Plugins API action. We're interested in 'plugin_information'.
+         * @param $args     array       The Plugins API parameters.
+         *
+         * @return object   The API response.
+         */
+        public function plugins_api_handler( $res, $action, $args ) {
+            if ( $action == 'plugin_information' ) {
+
+                // If the request is for this plugin, respond to it
+                if ( isset( $args->slug ) && $args->slug == plugin_basename( $this->plugin_file ) ) {
+                    $info = $this->get_license_info();
+
+                    $res = (object) array(
+                        'name'          => isset( $info->name ) ? $info->name : '',
+                        'version'       => $info->version,
+                        'slug'          => $args->slug,
+                        'download_link' => $info->package_url,
+
+                        'tested'        => isset( $info->tested ) ? $info->tested : '',
+                        'requires'      => isset( $info->requires ) ? $info->requires : '',
+                        'last_updated'  => isset( $info->last_updated ) ? $info->last_updated : '',
+                        'homepage'      => isset( $info->description_url ) ? $info->description_url : '',
+
+                        'sections'      => array(
+                            'description' => $info->description,
+                        ),
+
+                        'banners'       => array(
+                            'low'  => isset( $info->banner_low ) ? $info->banner_low : '',
+                            'high' => isset( $info->banner_high ) ? $info->banner_high : ''
+                        ),
+
+                        'external'      => true
+                    );
+
+                    // Add change log tab if the server sent it
+                    if ( isset( $info->changelog ) ) {
+                        $res['sections']['changelog'] = $info->changelog;
+                    }
+
+                    return $res;
+                }
+            }
+
+            // Not our request, let WordPress handle this.
+            return false;
         }
 
 
@@ -444,13 +437,14 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         private function get_local_version() {
             if ( $this->is_theme() ) {
                 $theme_data = wp_get_theme();
+
                 return $theme_data->Version;
             } else {
                 $plugin_data = get_plugin_data( $this->plugin_file, false );
+
                 return $plugin_data['Version'];
             }
         }
-
 
         //
         // API HELPER FUNCTIONS
@@ -459,22 +453,16 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
         /**
          * Makes a call to the WP License Manager API.
          *
-         * @param $method   String  The API method to invoke on the license manager site
+         * @param $action   String  The API method to invoke on the license manager site
          * @param $params   array   The parameters for the API call
+         *
          * @return          array   The API response
          */
-        private function call_api( $method, $params ) {
-            $url = $this->api_endpoint . '/' . $method;
+        private function call_api( $action, $params ) {
+            $url = $this->api_endpoint . '/' . $action;
 
             // Append parameters for GET request
-            $first = true;
-            foreach ( $params as $key => $value ) {
-                if ( $first ) {
-                    $url .= '?';
-                    $first = false;
-                }
-                $url .= $key . '=' . urlencode( $value ) . '&';
-            }
+            $url .= '?' . http_build_query( $params );
 
             // Send the request
             $response = wp_remote_get( $url );
@@ -492,6 +480,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
          * Checks the API response to see if there was an error.
          *
          * @param $response mixed|object    The API response to verify
+         *
          * @return bool     True if there was an error. Otherwise false.
          */
         private function is_api_error( $response ) {
@@ -509,6 +498,7 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
 
             return false;
         }
+
     }
 
 }
