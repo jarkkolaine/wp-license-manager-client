@@ -231,27 +231,22 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
          * If the license has not been configured properly, display an admin notice.
          */
         public function show_admin_notices() {
-            $options = get_option( $this->get_settings_field_name() );
-
-            if ( ! $options || ! isset( $options['email'] ) || ! isset( $options['license_key'] ) ||
-                $options['email'] == '' || $options['license_key'] == ''
-            ) {
-
+            if ( ! $this->get_license_key() ) {
                 $msg = __( 'Please enter your email and license key to enable updates to %s.', $this->text_domain );
                 $msg = sprintf( $msg, $this->product_name );
                 ?>
-                <div class="update-nag">
-                    <p>
-                        <?php echo $msg; ?>
-                    </p>
+                    <div class="update-nag">
+                        <p>
+                            <?php echo $msg; ?>
+                        </p>
 
-                    <p>
-                        <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
-                            <?php _e( 'Complete the setup now.', $this->text_domain ); ?>
-                        </a>
-                    </p>
-                </div>
-            <?php
+                        <p>
+                            <a href="<?php echo admin_url( 'options-general.php?page=' . $this->get_settings_page_slug() ); ?>">
+                                <?php _e( 'Complete the setup now.', $this->text_domain ); ?>
+                            </a>
+                        </p>
+                    </div>
+                <?php
             }
         }
 
@@ -444,6 +439,36 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
 
                 return $plugin_data['Version'];
             }
+        }
+
+        private function get_license_key() {
+            // First, check if configured in wp-config.php
+            $license_email = ( defined( 'FOURBASE_LICENSE_EMAIL' ) ) ? FOURBASE_LICENSE_EMAIL : '';
+            $license_key = ( defined( 'FOURBASE_LICENSE_KEY' ) ) ? FOURBASE_LICENSE_KEY : '';
+
+            // If not found, look up from database
+            if ( ! $license_key || strlen( $license_key ) < 8 ) {
+                $options = get_option( $this->get_settings_field_name() );
+
+                if ( $options
+                     && isset( $options['email'] )
+                     && isset( $options['license_key'] )
+                     && strlen( $options['email'] > 0 )
+                     && strlen( $options['license_key'] >= 8 ) ) {
+                    $license_email = $options['email'];
+                    $license_key = $options['license_key'];
+                } else {
+                    $license_email = '';
+                    $license_key = '';
+                }
+            }
+
+            if ( strlen( $license_email ) > 0 && strlen( $license_key ) >= 8 ) {
+                return array( 'key' => $license_key, 'email' => $license_email );
+            }
+
+            // No license key found
+            return false;
         }
 
         //
