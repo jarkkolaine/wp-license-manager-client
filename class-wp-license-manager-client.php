@@ -453,8 +453,8 @@ if ( ! class_exists( 'Wp_License_Manager_Client' ) ) {
                 if ( $options
                      && isset( $options['email'] )
                      && isset( $options['license_key'] )
-                     && strlen( $options['email'] > 0 )
-                     && strlen( $options['license_key'] >= 8 ) ) {
+                     && strlen( $options['email'] ) > 0
+                     && strlen( $options['license_key'] ) >= 8 ) {
                     $license_email = $options['email'];
                     $license_key = $options['license_key'];
                 } else {
